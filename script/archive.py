@@ -40,6 +40,7 @@ def main():
     'modules/skshaper/src/*.h',
     'modules/svg/include/*.h',
     'src/core/*.h',
+    'src/gpu/*.h',
     'src/gpu/gl/*.h',
     'src/utils/*.h',
     'third_party/externals/angle2/LICENSE',
