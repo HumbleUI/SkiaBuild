@@ -25,6 +25,7 @@ def main():
     'out/' + build_type + '-' + machine + '/icudtl.dat',
     'include/**/*',
     'modules/particles/include/*.h',
+    'modules/skcms/skcms.h',
     'modules/skottie/include/*.h',
     'modules/skottie/src/*.h',
     'modules/skottie/src/animator/*.h',
