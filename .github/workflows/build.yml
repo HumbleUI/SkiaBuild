@@ -14,7 +14,7 @@ on:
         default: 'false'
 
 env:
-  version: m105-f204b137b9
+  version: m106-ba6bc7d02d
 
 jobs:
   macos:
