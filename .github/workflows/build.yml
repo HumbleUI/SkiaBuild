@@ -43,7 +43,7 @@ jobs:
           API_TOKEN: ${{ secrets.API_TOKEN }}
 
   linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         build_type: [Release, Debug]
@@ -68,7 +68,7 @@ jobs:
           API_TOKEN: ${{ secrets.API_TOKEN }}
 
   android:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         machine: [arm, arm64, x64, x86]
