@@ -17,15 +17,18 @@ def system():
   (args, _) = parser.parse_known_args()
   return args.system if args.system else {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
+def native_machine():
+  return {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
+
 def machine():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
-  return args.machine if args.machine else {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64', 'aarch64': 'arm64'}[platform.machine()]
+  return args.machine if args.machine else native_machine()
 
 def version():
   parser = create_parser()
   args = parser.parse_args()
-  
+
   if args.version:
     return args.version
 
@@ -44,7 +47,7 @@ def classifier():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return '-' + args.classifier if args.classifier else ''
-  
+
 def github_headers():
   if os.environ.get('GITHUB_BASIC'):
     auth = 'Basic ' + base64.b64encode(os.environ.get('GITHUB_BASIC').encode('utf-8')).decode('utf-8')
@@ -59,4 +62,3 @@ def ndk():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return args.ndk if args.ndk else ''
-
