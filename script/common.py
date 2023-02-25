@@ -20,7 +20,7 @@ def system():
 def machine():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
-  return args.machine if args.machine else {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
+  return args.machine if args.machine else {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64', 'aarch64': 'arm64'}[platform.machine()]
 
 def version():
   parser = create_parser()
