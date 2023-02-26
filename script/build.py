@@ -76,7 +76,7 @@ def main():
   elif 'android' == system:
     args += [
       'skia_use_system_freetype2=false',
-      'ndk="'+ ndk + '"'
+      'ndk="' + ndk + '"'
     ]
 
   out = os.path.join('out', build_type + '-' + machine)
