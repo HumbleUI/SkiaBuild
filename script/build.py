@@ -8,7 +8,7 @@ def main():
   build_type = common.build_type()
   machine = common.machine()
   system = common.system()
-  ndk = common.ndk()  
+  ndk = common.ndk()
 
   if build_type == 'Debug':
     args = ['is_debug=true']
@@ -52,8 +52,20 @@ def main():
       # 'skia_enable_gpu=true',
       # 'skia_use_gl=true',
       'extra_cflags_cc=["-frtti"]',
-      'cxx="g++-9"',
     ]
+
+    if (machine == 'arm64') and (machine != common.native_machine()):
+      args += [
+        'cc="aarch64-linux-gnu-gcc-9"',
+        'cxx="aarch64-linux-gnu-g++-9"',
+        'extra_cflags=["-I/usr/aarch64-linux-gnu/include"]'
+      ]
+    else:
+      args += [
+        'cc="gcc-9"',
+        'cxx="g++-9"',
+      ]
+
   elif 'windows' == system:
     args += [
       'skia_use_system_freetype2=false',
@@ -64,7 +76,7 @@ def main():
   elif 'android' == system:
     args += [
       'skia_use_system_freetype2=false',
-      'ndk="'+ ndk + '"'
+      'ndk="' + ndk + '"'
     ]
 
   out = os.path.join('out', build_type + '-' + machine)

@@ -46,23 +46,26 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+        target_machine: ["x64", "arm64"]
         build_type: [Release, Debug]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
       - run: sudo ./script/prepare_linux.sh
-      - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
+      - run: sudo apt-get install g++-9-aarch64-linux-gnu -y
+        if: ${{ matrix.target_machine == 'arm64' }}
+      - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
       - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/checkout.py --version ${{ env.version }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/build.py --build-type ${{ matrix.build_type }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
+      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
+      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
       - uses: actions/upload-artifact@v2
         with:
-          name: Skia-${{ env.version }}-linux-${{ matrix.build_type }}-x64.zip
+          name: Skia-${{ env.version }}-linux-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
           path: '*.zip'
-      - run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
+      - run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
