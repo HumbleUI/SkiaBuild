@@ -10,6 +10,7 @@ def create_parser(version_required=False):
   parser.add_argument('--system')
   parser.add_argument('--machine')
   parser.add_argument('--ndk')
+  parser.add_argument('--gcc-version', default='9')
   return parser
 
 def system():
@@ -18,12 +19,26 @@ def system():
   return args.system if args.system else {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
 def native_machine():
-  return {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
+  return {
+    'AMD64': 'x64', 'x86_64': 'x64',
+    'arm64': 'arm64', 'aarch64': 'arm64',
+    'riscv64': 'riscv64'
+  }[platform.machine()]
 
 def machine():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return args.machine if args.machine else native_machine()
+
+def target_triplet():
+  if (system() == 'linux'):
+    return {
+      'x64': 'x86_64-linux-gnu',
+      'arm64': 'aarch64-linux-gnu',
+      'riscv64': 'riscv64-linux-gnu'
+    }.get(machine(), '')
+  else:
+    return ''
 
 def version():
   parser = create_parser()
@@ -62,3 +77,8 @@ def ndk():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return args.ndk if args.ndk else ''
+
+def gcc_version():
+  parser = create_parser()
+  (args, _) = parser.parse_known_args()
+  return args.gcc_version

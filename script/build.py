@@ -9,6 +9,7 @@ def main():
   machine = common.machine()
   system = common.system()
   ndk = common.ndk()
+  gcc_version = common.gcc_version()
 
   if build_type == 'Debug':
     args = ['is_debug=true']
@@ -54,16 +55,17 @@ def main():
       'extra_cflags_cc=["-frtti"]',
     ]
 
-    if (machine == 'arm64') and (machine != common.native_machine()):
+    target_triplet = common.target_triplet()
+    if (machine == common.native_machine()) or (target_triplet == ''):
       args += [
-        'cc="aarch64-linux-gnu-gcc-9"',
-        'cxx="aarch64-linux-gnu-g++-9"',
-        'extra_cflags=["-I/usr/aarch64-linux-gnu/include"]'
+        f'cc="gcc-{gcc_version}"',
+        f'cxx="g++-{gcc_version}"'
       ]
     else:
       args += [
-        'cc="gcc-9"',
-        'cxx="g++-9"',
+        f'cc="{target_triplet}-gcc-{gcc_version}"',
+        f'cxx="{target_triplet}-g++-{gcc_version}"',
+        f'extra_cflags=["-I/usr/{target_triplet}/include"]'
       ]
 
   elif 'windows' == system:
