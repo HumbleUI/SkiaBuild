@@ -14,7 +14,7 @@ on:
         default: 'false'
 
 env:
-  version: m109-664500fa93
+  version: m116-f44dbc40d8
 
 jobs:
   macos:
@@ -52,7 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: sudo ./script/prepare_linux.sh
-      - run: sudo apt-get install g++-9-aarch64-linux-gnu -y
+      - run: |
+          sudo apt-get update
+          sudo apt-get --yes install g\+\+-9-aarch64-linux-gnu
         if: ${{ matrix.target_machine == 'arm64' }}
       - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}

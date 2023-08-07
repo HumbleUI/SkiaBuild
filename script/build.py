@@ -38,7 +38,6 @@ def main():
     args += [
       'skia_use_system_freetype2=false',
       # 'skia_enable_gpu=true',
-      # 'skia_use_gl=true',
       'skia_use_metal=true',
       'extra_cflags_cc=["-frtti"]'
     ]
@@ -50,7 +49,6 @@ def main():
     args += [
       'skia_use_system_freetype2=true',
       # 'skia_enable_gpu=true',
-      # 'skia_use_gl=true',
       'extra_cflags_cc=["-frtti"]',
     ]
 

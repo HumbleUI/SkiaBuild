@@ -10,16 +10,16 @@ index 5b3b153336..8696aaf927 100644
  
  #include "unicode/udata.h"
  
--static void* win_mmap(const char* dataFile) {
+-static void* win_mmap(const wchar_t* dataFile) {
 -    if (!dataFile) {
 -        return nullptr;
 -    }
-+static void* win_mmap(const std::string& dataFile, std::ostringstream& buffer) {
++static void* win_mmap(const std::wstring& dataFile, std::ostringstream& buffer) {
      struct FCloseWrapper { void operator()(FILE* f) { fclose(f); } };
--    std::unique_ptr<FILE, FCloseWrapper> stream(fopen(dataFile, "rb"));
-+    std::unique_ptr<FILE, FCloseWrapper> stream(fopen(dataFile.c_str(), "rb"));
+-    std::unique_ptr<FILE, FCloseWrapper> stream(_wfopen(dataFile, L"rb"));
++    std::unique_ptr<FILE, FCloseWrapper> stream(_wfopen(dataFile, L"rb"));
      if (!stream) {
--        fprintf(stderr, "SkIcuLoader: datafile missing: %s.\n", dataFile);
+-        fprintf(stderr, "SkIcuLoader: datafile missing: %ls.\n", dataFile);
 +        buffer << "SkLoadICU: datafile '" << dataFile << "' is missing" << std::endl;
          return nullptr;
      }
@@ -51,11 +51,11 @@ index 5b3b153336..8696aaf927 100644
      }
      return addr;
 @@ -86,23 +84,20 @@ static std::string executable_directory() {
-     return end ? std::string(path, end - path) : std::string();
+     return get_module_path(hModule);
  }
  
--static bool load_from(const std::string& dir) {
--    auto sPath = dir + "\\icudtl.dat";
+-static bool load_from(const std::wstring& dir) {
+-    auto sPath = dir + L"\\icudtl.dat";
 -    if (void* addr = win_mmap(sPath.c_str())) {
 -        if (init_icu(addr)) {
 -            return true;
@@ -71,9 +71,9 @@ index 5b3b153336..8696aaf927 100644
      std::call_once(flag, []() {
 -        good = load_from(executable_directory()) || load_from(library_directory());
 +        std::ostringstream buffer;
-+        void* addr = win_mmap(library_directory() + "\\icudtl.dat", buffer);
++        void* addr = win_mmap(library_directory() + L"\\icudtl.dat", buffer);
 +        if (addr == nullptr)
-+            addr = win_mmap(executable_directory() + "\\icudtl.dat", buffer);
++            addr = win_mmap(executable_directory() + L"\\icudtl.dat", buffer);
 +        if (addr == nullptr)
 +            fputs(buffer.str().c_str(), stderr);
 +        if (addr)

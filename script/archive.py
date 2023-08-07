@@ -39,6 +39,7 @@ def main():
     'modules/sksg/include/*.h',
     'modules/skshaper/include/*.h',
     'modules/skshaper/src/*.h',
+    'modules/skunicode/include/*.h',
     'modules/svg/include/*.h',
     'src/**/*.h',
     'third_party/externals/angle2/LICENSE',
