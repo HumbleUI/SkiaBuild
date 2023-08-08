@@ -1,9 +1,12 @@
 diff --git a/third_party/icu/SkLoadICU.cpp b/third_party/icu/SkLoadICU.cpp
-index 5b3b153336..8696aaf927 100644
+index b6107714f7..edceb98af7 100644
 --- a/third_party/icu/SkLoadICU.cpp
 +++ b/third_party/icu/SkLoadICU.cpp
-@@ -15,39 +15,37 @@
+@@ -13,41 +13,40 @@
+ 
+ #include <cstdio>
  #include <cstring>
++#include <iostream>
  #include <mutex>
  #include <string>
 +#include <sstream>
@@ -14,25 +17,25 @@ index 5b3b153336..8696aaf927 100644
 -    if (!dataFile) {
 -        return nullptr;
 -    }
-+static void* win_mmap(const std::wstring& dataFile, std::ostringstream& buffer) {
++static void* win_mmap(const std::wstring& dataFile, std::wostringstream& buffer) {
      struct FCloseWrapper { void operator()(FILE* f) { fclose(f); } };
 -    std::unique_ptr<FILE, FCloseWrapper> stream(_wfopen(dataFile, L"rb"));
-+    std::unique_ptr<FILE, FCloseWrapper> stream(_wfopen(dataFile, L"rb"));
++    std::unique_ptr<FILE, FCloseWrapper> stream(_wfopen(dataFile.c_str(), L"rb"));
      if (!stream) {
 -        fprintf(stderr, "SkIcuLoader: datafile missing: %ls.\n", dataFile);
-+        buffer << "SkLoadICU: datafile '" << dataFile << "' is missing" << std::endl;
++        buffer << L"SkLoadICU: datafile '" << dataFile << L"' is missing" << std::endl;
          return nullptr;
      }
      int fileno = _fileno(stream.get());
      if (fileno < 0) {
 -        fprintf(stderr, "SkIcuLoader: datafile fileno error.\n");
-+        buffer << "SkLoadICU: datafile '" << dataFile << "' fileno error " << fileno << std::endl;
++        buffer << L"SkLoadICU: datafile '" << dataFile << L"' fileno error " << fileno << std::endl;
          return nullptr;
      }
      HANDLE file = (HANDLE)_get_osfhandle(fileno);
      if ((HANDLE)INVALID_HANDLE_VALUE == file) {
 -        fprintf(stderr, "SkIcuLoader: datafile handle error.\n");
-+        buffer << "SkLoadICU: datafile '" << dataFile << "' handle error" << std::endl;
++        buffer << L"SkLoadICU: datafile '" << dataFile << L"' handle error" << std::endl;
          return nullptr;
      }
      struct CloseHandleWrapper { void operator()(HANDLE h) { CloseHandle(h); } };
@@ -40,17 +43,17 @@ index 5b3b153336..8696aaf927 100644
          CreateFileMapping(file, nullptr, PAGE_READONLY, 0, 0, nullptr));
      if (!mmapHandle) {
 -        fprintf(stderr, "SkIcuLoader: datafile mmap error.\n");
-+        buffer << "SkLoadICU: datafile '" << dataFile << "' mmap error" << std::endl;
++        buffer << L"SkLoadICU: datafile '" << dataFile << L"' mmap error" << std::endl;
          return nullptr;
      }
      void* addr = MapViewOfFile(mmapHandle.get(), FILE_MAP_READ, 0, 0, 0);
      if (nullptr == addr) {
 -        fprintf(stderr, "SkIcuLoader: datafile view error.\n");
-+        buffer << "SkLoadICU: datafile '" << dataFile << "' view error" << std::endl;
++        buffer << L"SkLoadICU: datafile '" << dataFile << L"' view error" << std::endl;
          return nullptr;
      }
      return addr;
-@@ -86,23 +84,20 @@ static std::string executable_directory() {
+@@ -99,23 +98,20 @@ static std::wstring executable_directory() {
      return get_module_path(hModule);
  }
  
@@ -70,12 +73,12 @@ index 5b3b153336..8696aaf927 100644
      static std::once_flag flag;
      std::call_once(flag, []() {
 -        good = load_from(executable_directory()) || load_from(library_directory());
-+        std::ostringstream buffer;
++        std::wostringstream buffer;
 +        void* addr = win_mmap(library_directory() + L"\\icudtl.dat", buffer);
 +        if (addr == nullptr)
 +            addr = win_mmap(executable_directory() + L"\\icudtl.dat", buffer);
 +        if (addr == nullptr)
-+            fputs(buffer.str().c_str(), stderr);
++            std::wcerr << buffer.str() << std::endl;
 +        if (addr)
 +            loaded = init_icu(addr);
      });
