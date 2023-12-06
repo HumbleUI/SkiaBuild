@@ -50,6 +50,7 @@ def main():
       'skia_use_system_freetype2=true',
       # 'skia_enable_gpu=true',
       'extra_cflags_cc=["-frtti"]',
+      'skia_use_egl=true',
     ]
 
     if (machine == 'arm64') and (machine != common.native_machine()):
@@ -60,8 +61,8 @@ def main():
       ]
     else:
       args += [
-        'cc="gcc-9"',
-        'cxx="g++-9"',
+        'cc="gcc"',
+        'cxx="g++"',
       ]
 
   elif 'windows' == system:
