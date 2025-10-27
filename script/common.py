@@ -51,6 +51,8 @@ def classifier():
 def github_headers():
   if os.environ.get('GITHUB_BASIC'):
     auth = 'Basic ' + base64.b64encode(os.environ.get('GITHUB_BASIC').encode('utf-8')).decode('utf-8')
+  elif os.environ.get('GITHUB_TOKEN'):
+    auth = 'Bearer ' + os.environ.get('GITHUB_TOKEN')
   else:
     auth = 'token ' + os.environ.get('API_TOKEN')
   return {

@@ -22,7 +22,7 @@ def main():
     'skia_use_system_libpng=false',
     'skia_use_system_libwebp=false',
     'skia_use_system_zlib=false',
-    'skia_use_sfntly=false',
+    # 'skia_use_sfntly=false',
     'skia_use_freetype=true',
     # 'skia_use_harfbuzz=true',
     'skia_use_system_harfbuzz=false',
@@ -81,8 +81,8 @@ def main():
   out = os.path.join('out', build_type + '-' + machine)
   gn = 'gn.exe' if 'windows' == system else 'gn'
   subprocess.check_call([os.path.join('bin', gn), 'gen', out, '--args=' + ' '.join(args)])
-  ninja = 'ninja.bat' if 'windows' == system else 'ninja'
-  subprocess.check_call([os.path.join('..', 'depot_tools', ninja), '-C', out, 'skia', 'modules'])
+  ninja = 'ninja.exe' if 'windows' == system else 'ninja'
+  subprocess.check_call([os.path.join('third_party/ninja', ninja), '-C', out, 'skia', 'modules'])
 
   return 0
 
