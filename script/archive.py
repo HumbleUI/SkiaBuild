@@ -26,6 +26,7 @@ def main():
     'include/**/*',
     'modules/particles/include/*.h',
     'modules/skcms/skcms.h',
+    'modules/skcms/src/skcms_public.h',
     'modules/skottie/include/*.h',
     'modules/skottie/src/*.h',
     'modules/skottie/src/animator/*.h',
