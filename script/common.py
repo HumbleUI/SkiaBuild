@@ -2,6 +2,8 @@
 
 import argparse, base64, os, platform, re, subprocess
 
+basedir = os.path.abspath(os.path.dirname(__file__) + '/..')
+
 def create_parser(version_required=False):
   parser = argparse.ArgumentParser()
   parser.add_argument('--build-type', default='Release')

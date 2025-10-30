@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 env:
-  version: m123-4a0a5e9906
+  version: m132-9ab7c2064b
 
 jobs:
   macos:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        target_machine: ["x64", "arm64"]
+        target_machine: ["x64"]
         build_type: [Release, Debug]
       fail-fast: false
     steps:
@@ -73,34 +73,6 @@ jobs:
           name: Skia-${{ env.version }}-linux-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
           path: '*.zip'
       - run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
-        if: ${{ github.event.inputs.skip_release != 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  android:
-    if: false
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        machine: [arm, arm64, x64, x86]
-    steps:
-      - uses: actions/checkout@v4
-      - run: python3 script/check_release.py --version ${{ env.version }} --system android --machine ${{ matrix.machine }}
-        if: ${{ github.event.inputs.skip_release != 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
-      - run: sudo ./script/prepare_linux.sh
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/checkout.py --version ${{ env.version }} --system android --machine ${{ matrix.machine }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/build.py --system android --machine ${{ matrix.machine }} --ndk "/usr/local/lib/android/sdk/ndk-bundle"
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/archive.py --system android --machine ${{ matrix.machine }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Skia-${{ env.version }}-android-Release-${{ matrix.machine }}.zip
-          path: '*.zip'
-      - run: python3 script/release.py --system android --machine ${{ matrix.machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

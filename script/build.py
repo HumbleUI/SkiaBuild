@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-import common, os, subprocess, sys
+import common, os, re, subprocess, sys
 
 def main():
-  os.chdir(os.path.join(os.path.dirname(__file__), os.pardir, 'skia'))
+  os.chdir(f'{common.basedir}/skia')
 
   build_type = common.build_type()
   machine = common.machine()
@@ -78,11 +78,26 @@ def main():
       'ndk="' + ndk + '"'
     ]
 
+  # Generate build instructions
   out = os.path.join('out', build_type + '-' + machine)
   gn = 'gn.exe' if 'windows' == system else 'gn'
   subprocess.check_call([os.path.join('bin', gn), 'gen', out, '--args=' + ' '.join(args)])
+
+  # Compile
   ninja = 'ninja.exe' if 'windows' == system else 'ninja'
   subprocess.check_call([os.path.join('third_party/ninja', ninja), '-C', out, 'skia', 'modules'])
+
+  # Extract all unique defines from ninja commands
+  ninja_commands = subprocess.check_output([os.path.join('third_party/ninja', ninja), '-C', out, '-t', 'commands'], text=True)
+  defines = set()
+  for match in re.finditer(r'-D(\S+)', ninja_commands):
+    defines.add(match.group(1))
+  defines_file = os.path.join(out, 'defines.cmake')
+  with open(defines_file, 'w') as f:
+    f.write('add_definitions(\n')
+    for define in sorted(defines):
+      f.write('  -D' + define.replace('\\', '') + '\n')
+    f.write(')\n')
 
   return 0
 
