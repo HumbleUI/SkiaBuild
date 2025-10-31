@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 env:
-  version: m132-9ab7c2064b
+  version: m143-da51f0d60e
 
 jobs:
   macos:

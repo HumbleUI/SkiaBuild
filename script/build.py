@@ -39,12 +39,10 @@ def main():
       'skia_use_system_freetype2=false',
       # 'skia_enable_gpu=true',
       'skia_use_metal=true',
-      'extra_cflags_cc=["-frtti"]'
+      'extra_cflags_cc=["-frtti", "-stdlib=libc++"]'
     ]
-    if 'arm64' == machine:
-      args += ['extra_cflags=["-stdlib=libc++"]']
-    else:
-      args += ['extra_cflags=["-stdlib=libc++", "-mmacosx-version-min=10.13"]']
+    if 'x64' == machine:
+      args += ['extra_cflags=["-mmacosx-version-min=10.13"]']
   elif 'linux' == system:
     args += [
       'skia_use_system_freetype2=true',
@@ -89,14 +87,16 @@ def main():
 
   # Extract all unique defines from ninja commands
   ninja_commands = subprocess.check_output([os.path.join('third_party/ninja', ninja), '-C', out, '-t', 'commands'], text=True)
-  defines = set()
-  for match in re.finditer(r'-D(\S+)', ninja_commands):
-    defines.add(match.group(1))
-  defines_file = os.path.join(out, 'defines.cmake')
-  with open(defines_file, 'w') as f:
+  defines = {}
+  for match in re.finditer(r'-D([^ =]+)(?:=(\S+))?', ninja_commands):
+    defines[match.group(1)] = match.group(2)
+  with open(os.path.join(out, 'defines.cmake'), 'w') as f:
     f.write('add_definitions(\n')
-    for define in sorted(defines):
-      f.write('  -D' + define.replace('\\', '') + '\n')
+    for key, value in sorted(defines.items()):
+      if value is None:
+        f.write(f'  -D{key}\n')
+      else:
+        f.write(f'  -D{key}={value.replace('\\', '')}\n')
     f.write(')\n')
 
   return 0
