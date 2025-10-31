@@ -94,9 +94,9 @@ def main():
     f.write('add_definitions(\n')
     for key, value in sorted(defines.items()):
       if value is None:
-        f.write(f'  -D{key}\n')
+        f.write('  -D' + key + '\n')
       else:
-        f.write(f'  -D{key}={value.replace('\\', '')}\n')
+        f.write('  -D' + key + '=' + value.replace('\\', '') + '\n')
     f.write(')\n')
 
   return 0
