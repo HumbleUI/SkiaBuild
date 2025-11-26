@@ -1,13 +1,13 @@
 diff --git a/include/core/SkMatrix.h b/include/core/SkMatrix.h
-index 03140760d6..ec7cd35923 100644
+index 96a12f111e..5ffd87e13d 100644
 --- a/include/core/SkMatrix.h
 +++ b/include/core/SkMatrix.h
-@@ -86,7 +86,7 @@ public:
+@@ -93,7 +93,7 @@ public:
          return m;
      }
-     static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkVector t) { return Translate(t.x(), t.y()); }
--    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkIVector t) { return Translate(t.x(), t.y()); }
-+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkIVector t) { return Translate((SkScalar) t.x(), (SkScalar) t.y()); }
+     [[nodiscard]] static SkMatrix Translate(SkVector t) { return Translate(t.x(), t.y()); }
+-    [[nodiscard]] static SkMatrix Translate(SkIVector t) { return Translate(t.x(), t.y()); }
++    [[nodiscard]] static SkMatrix Translate(SkIVector t) { return Translate((SkScalar) t.x(), (SkScalar) t.y()); }
  
      /** Sets SkMatrix to rotate by |deg| about a pivot point at (0, 0).
  
