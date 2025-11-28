@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - master
+      - 'm*'
     paths:
       - ".github/workflows/*"
       - "script/*"
