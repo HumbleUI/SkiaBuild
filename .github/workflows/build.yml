@@ -64,7 +64,7 @@ jobs:
       - run: sudo ./script/prepare_linux.sh
       - run: |
           sudo apt-get update
-          sudo apt-get --yes install g\+\+-9-aarch64-linux-gnu
+          sudo apt-get --yes install g++-9-aarch64-linux-gnu
         if: ${{ matrix.target_machine == 'arm64' }}
       - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/checkout.py --version ${{ env.version }}
       - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
@@ -108,6 +108,41 @@ jobs:
           path: '*.zip'
       - shell: bash
         run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
+        if: ${{ github.event.inputs.skip_release != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  android:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target_machine: ["arm64", "x64"]
+        build_type: [Release, Debug]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android
+        if: ${{ github.event.inputs.skip_release != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
+      - run: |
+          sudo apt-get update
+          sudo apt-get --yes install openjdk-11-jdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip
+          sudo mkdir -p /opt/android-sdk/cmdline-tools/latest
+          sudo mv cmdline-tools/* /opt/android-sdk/cmdline-tools/latest/
+          sudo chown -R $USER:$USER /opt/android-sdk
+          echo "y" | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "ndk;25.1.8937393"
+      - run: python3 script/checkout.py --version ${{ env.version }} --system android --machine ${{ matrix.target_machine }}
+      - run: python3 script/build.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android --ndk /opt/android-sdk/ndk/25.1.8937393
+      - run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Skia-${{ env.version }}-android-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
+          path: '*.zip'
+      - run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
