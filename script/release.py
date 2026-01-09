@@ -19,7 +19,7 @@ def main():
   headers = common.github_headers()
 
   try:
-    resp = urllib.request.urlopen(urllib.request.Request('https://api.github.com/repos/HumbleUI/SkiaBuild/releases/tags/' + version, headers=headers)).read()
+    resp = urllib.request.urlopen(urllib.request.Request('https://api.github.com/repos/HumbleUi/SkiaBuild/releases/tags/' + version, headers=headers)).read()
   except urllib.error.URLError as e:
     data = '{"tag_name":"' + version + '","name":"' + version + '"}'
     resp = urllib.request.urlopen(urllib.request.Request('https://api.github.com/repos/HumbleUI/SkiaBuild/releases', data=data.encode('utf-8'), headers=headers)).read()

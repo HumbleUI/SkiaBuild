@@ -70,11 +70,51 @@ def main():
       'skia_use_direct3d=true',
       'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
     ]
-  elif 'android' == system:
-    args += [
-      'skia_use_system_freetype2=false',
-      'ndk="' + ndk + '"'
-    ]
+  elif 'android' == system:  
+    args += [  
+        'skia_use_system_freetype2=false',  
+        'ndk="' + ndk + '"',  
+        'target_os="android"',  
+        'skia_use_android_framework=false',  
+        'skia_enable_android_utils=true',  
+        'skia_use_freetype=true',  
+        'skia_use_system_freetype2=false',  
+        'skia_use_system_libjpeg_turbo=false',  
+        'skia_use_system_libpng=false',  
+        'skia_use_system_libwebp=false',  
+        'skia_use_system_zlib=false',  
+        'skia_use_system_icu=false',  
+        'skia_use_expat=true',  
+        'skia_use_libjpeg_turbo_encode=true',  
+        'skia_use_libjpeg_turbo_decode=true',  
+        'skia_use_libpng_encode=true',  
+        'skia_use_libpng_decode=true',  
+        'skia_use_libwebp_encode=true',  
+        'skia_use_libwebp_decode=true',  
+        'skia_use_zlib=true',  
+        'skia_use_icu=true',  
+        'skia_enable_fontmgr_android=true',  
+        'skia_enable_skottie=true',  
+        'skia_enable_svg=true',  
+        'skia_enable_pdf=false',  
+        'skia_enable_gpu=true',  
+        'skia_use_vulkan=true'  
+    ]  
+      
+    # Android ABI specific settings  
+    if machine == 'arm64':  
+        args += [  
+            'target_cpu="arm64"',  
+            'android_abi="arm64-v8a"'  
+        ]  
+    elif machine == 'x64':  
+        args += [  
+            'target_cpu="x64"',  
+            'android_abi="x86_64"'  
+        ]  
+      
+    # Android API level  
+    args += ['android_sdk_api=33']
 
   # Generate build instructions
   out = os.path.join('out', build_type + '-' + machine)
