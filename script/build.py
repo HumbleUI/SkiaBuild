@@ -49,6 +49,7 @@ def main():
       # 'skia_enable_gpu=true',
       'extra_cflags_cc=["-frtti"]',
       'skia_use_egl=true',
+      'skia_use_vulkan=true',
     ]
 
     if (machine == 'arm64') and (machine != common.native_machine()):
@@ -69,6 +70,7 @@ def main():
       # 'skia_use_angle=true',
       'skia_use_direct3d=true',
       'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
+      'skia_use_vulkan=true',
     ]
   elif 'android' == system:  
     args += [  

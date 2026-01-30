@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 env:
-  version: m143-da51f0d60e
+  version: m143-da51f0d60e-2
 
 jobs:
   macos:
