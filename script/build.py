@@ -47,7 +47,7 @@ def main():
       args += ['extra_cflags=["-stdlib=libc++", "-mmacosx-version-min=10.13"]']
   elif 'linux' == system:
     args += [
-      'skia_use_system_freetype2=true',
+      'skia_use_system_freetype2=false',
       # 'skia_enable_gpu=true',
       'extra_cflags_cc=["-frtti"]',
       'skia_use_egl=true',
@@ -70,7 +70,7 @@ def main():
       'skia_use_system_freetype2=false',
       # 'skia_use_angle=true',
       'skia_use_direct3d=true',
-      'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
+      #'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
     ]
   elif 'android' == system:
     args += [
