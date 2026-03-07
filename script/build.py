@@ -47,7 +47,7 @@ def main():
       args += ['extra_cflags=["-stdlib=libc++", "-mmacosx-version-min=10.13"]']
   elif 'linux' == system:
     args += [
-      'skia_use_system_freetype2=false',
+      'skia_use_system_freetype2=true',
       # 'skia_enable_gpu=true',
       'extra_cflags_cc=["-frtti"]',
       'skia_use_egl=true',
