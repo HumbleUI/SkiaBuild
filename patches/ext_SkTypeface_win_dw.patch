@@ -1,0 +1,54 @@
+diff --git a/src/ports/SkTypeface_win_dw.cpp b/src/ports/SkTypeface_win_dw.cpp
+index b9d69ab303..36e8422f4f 100644
+--- a/src/ports/SkTypeface_win_dw.cpp
++++ b/src/ports/SkTypeface_win_dw.cpp
+@@ -543,6 +543,18 @@ std::unique_ptr<SkScalerContext> DWriteFontTypeface::onCreateScalerContext(
+             sk_ref_sp(const_cast<DWriteFontTypeface*>(this)), effects, desc);
+ }
+ 
++static std::atomic<int> gUseSystemRenderingParams{
++#if defined(SK_FONT_HOST_USE_SYSTEM_SETTINGS)
++    1
++#else
++    0
++#endif
++};
++
++extern "C" void DWriteTypeface_UseSystemRenderingParams(int value) {
++    gUseSystemRenderingParams.store(value);
++}
++
+ void DWriteFontTypeface::onFilterRec(SkScalerContextRec* rec) const {
+     if (rec->fFlags & SkScalerContext::kLCD_Vertical_Flag) {
+         rec->fMaskFormat = SkMask::kA8_Format;
+@@ -561,19 +573,19 @@ void DWriteFontTypeface::onFilterRec(SkScalerContextRec* rec) const {
+     }
+     rec->setHinting(h);
+ 
+-#if defined(SK_FONT_HOST_USE_SYSTEM_SETTINGS)
+-    IDWriteFactory* factory = sk_get_dwrite_factory();
+-    if (factory != nullptr) {
+-        SkTScopedComPtr<IDWriteRenderingParams> defaultRenderingParams;
+-        if (SUCCEEDED(factory->CreateRenderingParams(&defaultRenderingParams))) {
+-            float gamma = defaultRenderingParams->GetGamma();
+-            rec->setDeviceGamma(gamma);
+-            rec->setPaintGamma(gamma);
+-
+-            rec->setContrast(defaultRenderingParams->GetEnhancedContrast());
++    if (gUseSystemRenderingParams.load() == 1) {
++        IDWriteFactory* factory = sk_get_dwrite_factory();
++        if (factory != nullptr) {
++            SkTScopedComPtr<IDWriteRenderingParams> defaultRenderingParams;
++            if (SUCCEEDED(factory->CreateRenderingParams(&defaultRenderingParams))) {
++                float gamma = defaultRenderingParams->GetGamma();
++                rec->setDeviceGamma(gamma);
++                rec->setPaintGamma(gamma);
++
++                rec->setContrast(defaultRenderingParams->GetEnhancedContrast());
++            }
+         }
+     }
+-#endif
+ }
+ 
+ ///////////////////////////////////////////////////////////////////////////////
