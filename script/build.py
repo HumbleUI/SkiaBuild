@@ -39,6 +39,7 @@ def main():
       'skia_use_system_freetype2=false',
       # 'skia_enable_gpu=true',
       'skia_use_metal=true',
+      'skia_use_vulkan=true',
       'extra_cflags_cc=["-frtti", "-stdlib=libc++"]'
     ]
     if 'x64' == machine:
