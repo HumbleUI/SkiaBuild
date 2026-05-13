@@ -1,0 +1,14 @@
+diff --git a/bin/fetch-gn b/bin/fetch-gn
+index ebdc31c449..c727f342b6 100755
+--- a/bin/fetch-gn
++++ b/bin/fetch-gn
+@@ -21,6 +21,9 @@ gnzip = os.path.join(tempfile.mkdtemp(), 'gn.zip')
+ with open(gnzip, 'wb') as f:
+   OS  = {'darwin': 'mac', 'linux': 'linux', 'linux2': 'linux', 'win32': 'windows'}[sys.platform]
+   cpu = {'aarch64': 'arm64', 'amd64': 'amd64', 'arm64': 'arm64', 'x86_64': 'amd64'}[platform.machine().lower()]
++  if (OS == 'windows') and (cpu == 'arm64'):
++    # for Windows Arm64, force the use of the amd64 gn binary
++    cpu = 'amd64'
+ 
+   rev = 'b2afae122eeb6ce09c52d63f67dc53fc517dbdc8'
+   url = 'https://chrome-infra-packages.appspot.com/dl/gn/gn/{}-{}/+/git_revision:{}'.format(

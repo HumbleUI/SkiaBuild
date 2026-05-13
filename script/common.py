@@ -20,7 +20,7 @@ def system():
   return args.system if args.system else {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
 def native_machine():
-  return {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
+  return {'amd64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine().lower()]
 
 def machine():
   parser = create_parser()

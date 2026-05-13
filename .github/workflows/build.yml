@@ -79,32 +79,38 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows:
-    runs-on: windows-latest
     strategy:
       matrix:
-        build_type: [Release, Debug]
+        os: [ windows-latest, windows-11-arm ]
+        build_type: [ Release, Debug ]
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - shell: bash
         run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
-      - uses: microsoft/setup-msbuild@v1
+      - run: |
+          ninja --version
+          $os_arch = "${{ runner.arch }}".ToLower()
+          echo "os_arch=$os_arch" >> $env:GITHUB_ENV
+      - uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: ${{ env.os_arch }}
       - uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: amd64
+          arch: ${{ env.os_arch }}
       - shell: bash
         run: python3 script/checkout.py --version ${{ env.version }}
       - shell: bash
         run: python3 script/build.py --build-type ${{ matrix.build_type }}
       - shell: bash
         run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: Skia-${{ env.version }}-windows-${{ matrix.build_type }}-x64.zip
+          name: Skia-${{ env.version }}-windows-${{ matrix.build_type }}-${{ env.os_arch }}.zip
           path: '*.zip'
       - shell: bash
         run: python3 script/release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }}
