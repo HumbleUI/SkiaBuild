@@ -61,8 +61,8 @@ def main():
       ]
     else:
       args += [
-        'cc="gcc-9"',
-        'cxx="g++-9"',
+        'cc="clang"',
+        'cxx="clang++"',
       ]
 
   elif 'windows' == system:
