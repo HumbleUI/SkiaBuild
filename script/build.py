@@ -1,14 +1,26 @@
 #! /usr/bin/env python3
 
-import common, os, re, subprocess, sys
+import common, os, re, subprocess, sys, toolchain
 
-def main():
-  os.chdir(f'{common.basedir}/skia')
+# Targets this repo cross compiles to. The GCC cross drivers carry the triple in
+# their name; Clang is a single cross compiler and has to be told with --target.
+LINUX_TRIPLES = {'arm64': 'aarch64-linux-gnu'}
 
-  build_type = common.build_type()
-  machine = common.machine()
-  system = common.system()
-  ndk = common.ndk()
+def gn_string(value):
+  '''Quote a value as a GN string literal.'''
+  return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+def cc_args(cc, cxx):
+  return ['cc=' + gn_string(cc), 'cxx=' + gn_string(cxx)]
+
+def gn_args(build_type, system, machine, native_machine, ndk = '', clang = None):
+  '''GN arguments for one build configuration.
+
+  Pure: touches neither the filesystem nor the environment, so every supported
+  combination can be exercised by test_gn_args.py. `clang` is a toolchain.Clang
+  to build with Clang/LLVM, or None for the platform default compiler (GCC on
+  Linux, MSVC on Windows, Apple Clang on macOS, the NDK toolchain on Android).
+  '''
 
   if build_type == 'Debug':
     args = ['is_debug=true']
@@ -34,46 +46,71 @@ def main():
     'skia_enable_skottie=true'
   ]
 
+  # Collected here and emitted once at the end: GN would reject a second
+  # assignment of the same argument.
+  extra_cflags = []
+  extra_cflags_cc = []
+
   if 'macos' == system:
     args += [
       'skia_use_system_freetype2=false',
       # 'skia_enable_gpu=true',
       'skia_use_metal=true',
       'skia_use_vulkan=true',
-      'extra_cflags_cc=["-frtti", "-stdlib=libc++"]'
     ]
+    extra_cflags_cc += ['-frtti', '-stdlib=libc++']
     if 'x64' == machine:
-      args += ['extra_cflags=["-mmacosx-version-min=10.13"]']
+      extra_cflags += ['-mmacosx-version-min=10.13']
+    if clang:
+      # cc/c++ already are Apple Clang, so this only pins the exact drivers and
+      # lets --clang-path pick a different LLVM. Skia handles the -target flag
+      # for cross builds between x64 and arm64 itself.
+      args += cc_args(clang.cc, clang.cxx)
   elif 'linux' == system:
     args += [
       'skia_use_system_freetype2=true',
       # 'skia_enable_gpu=true',
-      'extra_cflags_cc=["-frtti"]',
       'skia_use_egl=true',
       'skia_use_vulkan=true',
     ]
-
-    if (machine == 'arm64') and (machine != common.native_machine()):
-      args += [
-        'cc="aarch64-linux-gnu-gcc-10"',
-        'cxx="aarch64-linux-gnu-g++-10"',
-        'extra_cflags=["-I/usr/aarch64-linux-gnu/include"]'
-      ]
+    extra_cflags_cc += ['-frtti']
+    # Only arm64 has a cross toolchain set up (see script/prepare_linux.sh).
+    cross = 'arm64' == machine and 'arm64' != native_machine
+    if cross:
+      extra_cflags += ['-I/usr/' + LINUX_TRIPLES[machine] + '/include']
+    if clang:
+      cc, cxx = clang.cc, clang.cxx
+      if cross:
+        # The cross GCC installed next to it supplies the sysroot, the C++
+        # headers and libstdc++; Clang finds them from the target triple.
+        target = ' --target=' + LINUX_TRIPLES[machine]
+        cc, cxx = cc + target, cxx + target
+      args += cc_args(cc, cxx)
+    elif cross:
+      args += cc_args(LINUX_TRIPLES[machine] + '-gcc-10', LINUX_TRIPLES[machine] + '-g++-10')
     else:
-      args += [
-        'cc="gcc-10"',
-        'cxx="g++-10"',
-      ]
-
+      args += cc_args('gcc-10', 'g++-10')
   elif 'windows' == system:
     args += [
       'skia_use_system_freetype2=false',
       # 'skia_use_angle=true',
       'skia_use_direct3d=true',
-      'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
       'skia_use_vulkan=true',
     ]
+    extra_cflags += ['-DSK_FONT_HOST_USE_SYSTEM_SETTINGS']
+    if clang:
+      # Skia keeps its MSVC style toolchain and swaps the compiler and
+      # librarian for clang-cl/lld-link when clang_win points at an LLVM root;
+      # cc/cxx are not consulted. MSVC and the Windows SDK are still needed for
+      # the CRT, the import libraries and the assembler.
+      args += ['clang_win=' + gn_string(clang.root.replace('\\', '/'))]
+      if clang.resource_version:
+        # Skia can work this one out itself, but only milestones from m143 on
+        # accept the single component resource directory that Clang 16 and
+        # later use ("22" rather than "13.0.1"); older ones fail to configure.
+        args += ['clang_win_version=' + gn_string(clang.resource_version)]
   elif 'android' == system:  
+    # Built with the toolchain bundled in the NDK, which is Clang already.
     args += [  
         'skia_use_system_freetype2=false',  
         'ndk="' + ndk + '"',  
@@ -119,13 +156,50 @@ def main():
     # Android API level  
     args += ['android_sdk_api=33']
 
+  if extra_cflags:
+    args += ['extra_cflags=[' + ', '.join([gn_string(x) for x in extra_cflags]) + ']']
+  if extra_cflags_cc:
+    args += ['extra_cflags_cc=[' + ', '.join([gn_string(x) for x in extra_cflags_cc]) + ']']
+
+  return args
+
+def clang_toolchain(system):
+  '''The Clang toolchain to build `system` with, or None to use the default.'''
+  if not common.use_clang():
+    return None
+
+  # flush, or the line lands after all of gn's and ninja's output: those write
+  # to the file descriptor directly, while print() is block buffered once the
+  # build is piped to a log, as it is on CI.
+  if 'android' == system:
+    # Nothing to select: BUILDCONFIG.gn always uses the NDK's Clang.
+    print('> --use-clang ignored, the Android NDK toolchain is Clang already', flush = True)
+    return None
+
+  clang = toolchain.find_clang(system, common.host_system(), common.clang_path())
+  print('> Building with Clang ' + (clang.version or 'of unknown version') + ' from ' + clang.root,
+        flush = True)
+  if 'macos' == system and not common.clang_path():
+    print('> Note: macOS builds use Apple Clang by default, so this changes nothing', flush = True)
+  return clang
+
+def main():
+  os.chdir(f'{common.basedir}/skia')
+
+  build_type = common.build_type()
+  machine = common.machine()
+  system = common.system()
+  ndk = common.ndk()
+
+  args = gn_args(build_type, system, machine, common.native_machine(), ndk, clang_toolchain(system))
+
   # Generate build instructions
   out = os.path.join('out', build_type + '-' + machine)
-  gn = 'gn.exe' if 'windows' == system else 'gn'
+  gn = 'gn.exe' if 'windows' == common.host_system() else 'gn'
   subprocess.check_call([os.path.join('bin', gn), 'gen', out, '--args=' + ' '.join(args)])
 
   # Compile
-  ninja = 'ninja.exe' if 'windows' == system else 'ninja'
+  ninja = 'ninja.exe' if 'windows' == common.host_system() else 'ninja'
   subprocess.check_call([os.path.join('third_party/ninja', ninja), '-C', out, 'skia', 'modules'])
 
   # Extract all unique defines from ninja commands

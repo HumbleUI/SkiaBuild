@@ -12,12 +12,27 @@ def create_parser(version_required=False):
   parser.add_argument('--system')
   parser.add_argument('--machine')
   parser.add_argument('--ndk')
+  # Accepts "--use-clang", "--use-clang true" and "--use-clang ${{ inputs.x }}",
+  # which expands to an empty string when the workflow was not dispatched.
+  parser.add_argument('--use-clang', nargs='?', const='true', default='false')
+  parser.add_argument('--clang-path')
   return parser
+
+def parse_bool(name, value):
+  normalized = value.strip().lower()
+  if normalized in ['true', 'yes', 'on', '1']:
+    return True
+  if normalized in ['false', 'no', 'off', '0', '']:
+    return False
+  raise Exception('Expected a boolean for ' + name + ', got "' + value + '"')
+
+def host_system():
+  return {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
 def system():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
-  return args.system if args.system else {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
+  return args.system if args.system else host_system()
 
 def native_machine():
   return {'amd64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine().lower()]
@@ -66,3 +81,13 @@ def ndk():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return args.ndk if args.ndk else ''
+
+def use_clang():
+  parser = create_parser()
+  (args, _) = parser.parse_known_args()
+  return parse_bool('--use-clang', args.use_clang)
+
+def clang_path():
+  parser = create_parser()
+  (args, _) = parser.parse_known_args()
+  return args.clang_path if args.clang_path else None

@@ -13,3 +13,10 @@ update-alternatives --config gcc
 
 apt-get install git python3 wget -y
 apt-get install ninja-build fontconfig libfontconfig1-dev libglu1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev curl zip -y
+
+# Clang is only needed by `build.py --use-clang`, so it is opt in and the
+# default GCC builds do not pay for it. No linker is installed along with it:
+# build.py only ever produces static libraries, so nothing is ever linked.
+if [ "${1:-}" = "--with-clang" ]; then
+  apt-get install clang -y
+fi
