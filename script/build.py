@@ -7,8 +7,9 @@ import common, os, re, subprocess, sys, toolchain
 LINUX_TRIPLES = {'arm64': 'aarch64-linux-gnu'}
 
 def gn_string(value):
-  '''Quote a value as a GN string literal.'''
-  return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+  for char in '\\"$':
+    value = value.replace(char, '\\' + char)
+  return '"' + value + '"'
 
 def cc_args(cc, cxx):
   return ['cc=' + gn_string(cc), 'cxx=' + gn_string(cxx)]
@@ -46,8 +47,6 @@ def gn_args(build_type, system, machine, native_machine, ndk = '', clang = None)
     'skia_enable_skottie=true'
   ]
 
-  # Collected here and emitted once at the end: GN would reject a second
-  # assignment of the same argument.
   extra_cflags = []
   extra_cflags_cc = []
 
@@ -62,9 +61,6 @@ def gn_args(build_type, system, machine, native_machine, ndk = '', clang = None)
     if 'x64' == machine:
       extra_cflags += ['-mmacosx-version-min=10.13']
     if clang:
-      # cc/c++ already are Apple Clang, so this only pins the exact drivers and
-      # lets --clang-path pick a different LLVM. Skia handles the -target flag
-      # for cross builds between x64 and arm64 itself.
       args += cc_args(clang.cc, clang.cxx)
   elif 'linux' == system:
     args += [
@@ -74,7 +70,6 @@ def gn_args(build_type, system, machine, native_machine, ndk = '', clang = None)
       'skia_use_vulkan=true',
     ]
     extra_cflags_cc += ['-frtti']
-    # Only arm64 has a cross toolchain set up (see script/prepare_linux.sh).
     cross = 'arm64' == machine and 'arm64' != native_machine
     if cross:
       extra_cflags += ['-I/usr/' + LINUX_TRIPLES[machine] + '/include']
@@ -168,11 +163,7 @@ def clang_toolchain(system):
   if not common.use_clang():
     return None
 
-  # flush, or the line lands after all of gn's and ninja's output: those write
-  # to the file descriptor directly, while print() is block buffered once the
-  # build is piped to a log, as it is on CI.
   if 'android' == system:
-    # Nothing to select: BUILDCONFIG.gn always uses the NDK's Clang.
     print('> --use-clang ignored, the Android NDK toolchain is Clang already', flush = True)
     return None
 

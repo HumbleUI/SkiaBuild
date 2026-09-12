@@ -11,8 +11,10 @@ the target (see skia/gn/BUILDCONFIG.gn and skia/gn/toolchain/BUILD.gn):
   * Windows targets keep Skia's MSVC style toolchain -- it still needs MSVC and
     the Windows SDK for the CRT headers, the import libraries and ml64.exe --
     and only swap the compiler and librarian for clang-cl/lld-link. That is
-    requested by pointing `clang_win` at an LLVM installation root; GN then
-    derives `clang_win_version` itself via gn/highest_version_dir.py.
+    requested by pointing `clang_win` at an LLVM installation root, alongside
+    `clang_win_version`. GN can derive the latter itself, but only milestones
+    from m143 on recognise the resource directory name Clang 16 and later use,
+    which is why this module reports it as `resource_version`.
   * Android is built with the toolchain bundled in the NDK, which is Clang
     already, so there is nothing to locate.
 
@@ -127,56 +129,25 @@ def _find_clang_win(host_system, clang_path):
 
 ### POSIX: clang/clang++ drivers, addressed by path
 
-def _versioned_drivers(host_system):
-  '''clang-<N>/clang++-<N> pairs found on PATH, newest first.
-
-  Debian, Ubuntu and apt.llvm.org install versioned drivers and do not always
-  provide the unversioned ones.
-  '''
-  found = {}
-  suffix = r'\.exe$' if 'windows' == host_system else r'$'
-  pattern = re.compile(r'^clang-([0-9]+)' + suffix)
-  for dir in os.environ.get('PATH', '').split(os.pathsep):
-    if not dir or not os.path.isdir(dir):
-      continue
-    try:
-      entries = os.listdir(dir)
-    except OSError:
-      continue
-    for entry in entries:
-      match = pattern.match(entry)
-      if not match:
-        continue
-      version = int(match.group(1))
-      cxx = os.path.join(dir, entry.replace('clang-', 'clang++-', 1))
-      if version not in found and os.path.isfile(cxx):
-        found[version] = (os.path.join(dir, entry), cxx)
-  return [found[version] for version in sorted(found, reverse = True)]
-
 def _find_clang_posix(host_system, clang_path):
   clang = _exe('clang', host_system)
   clangxx = _exe('clang++', host_system)
 
   if clang_path:
-    candidates = [(os.path.join(clang_path, 'bin', clang),
-                   os.path.join(clang_path, 'bin', clangxx))]
+    cc = os.path.join(clang_path, 'bin', clang)
+    cxx = os.path.join(clang_path, 'bin', clangxx)
   else:
-    # An unversioned clang on PATH wins: it is the Clang the machine is
-    # configured to use (update-alternatives, Xcode, a toolchain on PATH).
-    # Versioned drivers are a fallback, newest first.
-    candidates = []
+    # Whatever the machine is configured to use: update-alternatives, Xcode, a
+    # toolchain on PATH. An installation that only provides versioned drivers,
+    # as apt.llvm.org does, is selected with --clang-path.
     cc, cxx = shutil.which(clang), shutil.which(clangxx)
-    if cc and cxx:
-      candidates.append((cc, cxx))
-    candidates += _versioned_drivers(host_system)
 
-  for cc, cxx in candidates:
-    if os.path.isfile(cc) and os.path.isfile(cxx):
-      cc, cxx = os.path.realpath(cc), os.path.realpath(cxx)
-      return Clang(root = os.path.dirname(os.path.dirname(cc)),
-                   cc = cc,
-                   cxx = cxx,
-                   version = _version(cc))
+  if cc and cxx and os.path.isfile(cc) and os.path.isfile(cxx):
+    cc, cxx = os.path.realpath(cc), os.path.realpath(cxx)
+    return Clang(root = os.path.dirname(os.path.dirname(cc)),
+                 cc = cc,
+                 cxx = cxx,
+                 version = _version(cc))
 
   raise ClangNotFound(
     'Could not find ' + clang + ' and ' + clangxx +

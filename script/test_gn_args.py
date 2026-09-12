@@ -120,8 +120,8 @@ class TestClang(unittest.TestCase):
     self.assertNotIn('cc="gcc-10"', args)
 
   def test_linux_cross_passes_target_triple(self):
-    '''Clang is a single cross compiler: the triple is what selects the target.
-    CLangV4 dropped Clang entirely for cross builds and silently used GCC.'''
+    '''Clang is a single cross compiler, so the triple is what selects the
+    target; the GCC cross drivers carry it in their name instead.'''
     args = args_for('Release', 'linux', 'arm64', 'x64', CLANG_POSIX)
     self.assertIn('cc="/usr/lib/llvm-18/bin/clang --target=aarch64-linux-gnu"', args)
     self.assertIn('cxx="/usr/lib/llvm-18/bin/clang++ --target=aarch64-linux-gnu"', args)
@@ -203,6 +203,10 @@ class TestQuoting(unittest.TestCase):
     self.assertEqual(build.gn_string('clang'), '"clang"')
     self.assertEqual(build.gn_string('C:\\LLVM'), '"C:\\\\LLVM"')
     self.assertEqual(build.gn_string('a"b'), '"a\\"b"')
+    # An unescaped dollar sign would start a GN expansion.
+    self.assertEqual(build.gn_string('a$b'), '"a\\$b"')
+    # The backslash must be escaped before the others, not after.
+    self.assertEqual(build.gn_string('a\\$b'), '"a\\\\\\$b"')
 
   def test_paths_with_spaces_stay_one_gn_token(self):
     args = args_for('Release', 'windows', 'x64', 'x64', CLANG_WIN)
@@ -217,26 +221,6 @@ class TestClangDiscovery(unittest.TestCase):
   def setUp(self):
     self.dir = tempfile.mkdtemp()
     self.addCleanup(shutil.rmtree, self.dir, True)
-
-  def touch(self, *parts):
-    path = os.path.join(self.dir, *parts)
-    os.makedirs(os.path.dirname(path), exist_ok = True)
-    open(path, 'w').close()
-    return path
-
-  def test_versioned_drivers_prefer_the_newest(self):
-    for version in ['9', '14', '18']:
-      self.touch('bin', 'clang-' + version)
-      self.touch('bin', 'clang++-' + version)
-    # A driver without its C++ counterpart is not a usable pair.
-    self.touch('bin', 'clang-20')
-    path = os.environ['PATH']
-    self.addCleanup(os.environ.__setitem__, 'PATH', path)
-    os.environ['PATH'] = os.path.join(self.dir, 'bin')
-    found = toolchain._versioned_drivers('linux')
-    self.assertEqual([os.path.basename(cc) for cc, _ in found],
-                     ['clang-18', 'clang-14', 'clang-9'])
-    self.assertTrue(found[0][1].endswith('clang++-18'))
 
   def test_resource_version_handles_both_namings(self):
     self.assertIsNone(toolchain._resource_version(self.dir))
@@ -264,29 +248,18 @@ class TestClangDiscovery(unittest.TestCase):
     self.assertEqual(toolchain._exe('clang-cl', 'linux'), 'clang-cl')
 
 class TestArgumentParsing(unittest.TestCase):
-  '''--use-clang is fed straight from a GitHub Actions expression, which expands
-  to "true", "false" or, on a push, to nothing at all.'''
+  '''The CLI contract the workflow relies on.'''
 
-  def test_accepted_values(self):
-    for value in ['true', 'True', 'TRUE', ' yes ', 'on', '1']:
-      self.assertTrue(common.parse_bool('--use-clang', value), msg = value)
-    for value in ['false', 'False', 'no', 'off', '0', '', '  ']:
-      self.assertFalse(common.parse_bool('--use-clang', value), msg = value)
-
-  def test_rejects_garbage(self):
-    with self.assertRaises(Exception):
-      common.parse_bool('--use-clang', 'clang')
-
-  def test_flag_forms(self):
+  def test_clang_is_opt_in(self):
     parser = common.create_parser()
-    self.assertEqual(parser.parse_known_args([])[0].use_clang, 'false')
-    self.assertEqual(parser.parse_known_args(['--use-clang'])[0].use_clang, 'true')
-    self.assertEqual(parser.parse_known_args(['--use-clang', 'true'])[0].use_clang, 'true')
-    self.assertEqual(parser.parse_known_args(['--use-clang', ''])[0].use_clang, '')
-    # A bare --use-clang must not swallow the next option.
-    (args, _) = parser.parse_known_args(['--use-clang', '--machine', 'x64'])
-    self.assertEqual(args.use_clang, 'true')
-    self.assertEqual(args.machine, 'x64')
+    self.assertFalse(parser.parse_known_args([])[0].use_clang)
+    self.assertTrue(parser.parse_known_args(['--use-clang'])[0].use_clang)
+
+  def test_clang_path_is_optional(self):
+    parser = common.create_parser()
+    self.assertIsNone(parser.parse_known_args([])[0].clang_path)
+    self.assertEqual(
+      parser.parse_known_args(['--clang-path', '/opt/llvm'])[0].clang_path, '/opt/llvm')
 
 if __name__ == '__main__':
   unittest.main()

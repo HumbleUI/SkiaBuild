@@ -28,23 +28,23 @@ python3 script/archive.py --build-type Debug
 
 ## Building with Clang
 
-Linux is built with GCC and Windows with MSVC by default. `--use-clang` builds
-them with Clang/LLVM instead -- the compiler Skia is developed against, and the
-one its own codegen and warning settings are written for (Skia's build files are
-full of `is_clang` branches, and some dependencies only enable their faster code
-paths for it):
+The published Linux and Windows binaries are built with Clang/LLVM -- the
+compiler Skia is developed against, and the one its own codegen and warning
+settings are written for (Skia's build files are full of `is_clang` branches, and
+some dependencies only enable their faster code paths for it). `build.py` still
+defaults to the platform compiler, so ask for Clang with `--use-clang`:
 
 ```sh
 python3 script/checkout.py --version m91-b99622c05a
 python3 script/build.py --use-clang
-python3 script/archive.py --classifier clang
+python3 script/archive.py
 ```
 
 Clang is looked up automatically: on PATH and in the usual installation
 directories. Pass `--clang-path <LLVM installation root>` to build with a
 specific installation instead. If no usable toolchain is found the build stops
 and lists where it looked -- it never falls back to another compiler, so a
-`-clang` artifact is always really built with Clang.
+build that was asked for Clang is never quietly something else.
 
 What each platform needs:
 
@@ -61,11 +61,9 @@ What each platform needs:
   toolchain bundled in the NDK), so `--use-clang` changes nothing there unless
   `--clang-path` points at a different LLVM.
 
-On CI, Release is built twice on Linux and Windows -- once with the platform
-default compiler and once with Clang -- so a single run publishes both, the
-Clang artifacts carrying a `-clang` classifier next to the regular ones. Debug
-is built only with the default compiler, and macOS and Android have no second
-set at all: those toolchains are Clang already.
+CI passes `--use-clang` for every Linux and Windows configuration, so those are
+the binaries the releases contain. Artifact names are unchanged: there is one
+build per platform and architecture, not a Clang variant alongside another one.
 
 ## Running the tests
 
