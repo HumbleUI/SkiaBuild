@@ -12,8 +12,4 @@ update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/b
 update-alternatives --config gcc 
 
 apt-get install git python3 wget -y
-apt-get install ninja-build fontconfig libfontconfig1-dev libglu1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev curl zip -y
-
-if [ "${1:-}" = "--with-clang" ]; then
-  apt-get install clang -y
-fi
+apt-get install ninja-build fontconfig libfontconfig1-dev libglu1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev curl zip clang -y

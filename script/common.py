@@ -12,17 +12,12 @@ def create_parser(version_required=False):
   parser.add_argument('--system')
   parser.add_argument('--machine')
   parser.add_argument('--ndk')
-  parser.add_argument('--use-clang', action='store_true')
-  parser.add_argument('--clang-path')
   return parser
-
-def host_system():
-  return {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
 def system():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
-  return args.system if args.system else host_system()
+  return args.system if args.system else {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 
 def native_machine():
   return {'amd64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine().lower()]
@@ -71,13 +66,3 @@ def ndk():
   parser = create_parser()
   (args, _) = parser.parse_known_args()
   return args.ndk if args.ndk else ''
-
-def use_clang():
-  parser = create_parser()
-  (args, _) = parser.parse_known_args()
-  return args.use_clang
-
-def clang_path():
-  parser = create_parser()
-  (args, _) = parser.parse_known_args()
-  return args.clang_path if args.clang_path else None
