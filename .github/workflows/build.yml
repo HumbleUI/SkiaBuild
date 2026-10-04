@@ -29,16 +29,15 @@ jobs:
         build_type: [Release, Debug]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
       - run: python3 script/checkout.py --version ${{ env.version }}
       - run: python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.machine }}
       - run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.machine }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Skia-${{ env.version }}-macos-${{ matrix.build_type }}-${{ matrix.machine }}.zip
           path: '*.zip'
@@ -55,17 +54,16 @@ jobs:
         build_type: [Release, Debug]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
       - run: sudo ./script/prepare_linux.sh
       - run: python3 script/checkout.py --version ${{ env.version }}
       - run: python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
       - run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Skia-${{ env.version }}-linux-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
           path: '*.zip'
@@ -95,9 +93,6 @@ jobs:
       - uses: microsoft/setup-msbuild@v3
         with:
           msbuild-architecture: ${{ env.os_arch }}
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ env.os_arch }}
       - shell: bash
         run: python3 script/checkout.py --version ${{ env.version }}
       - shell: bash
@@ -122,12 +117,11 @@ jobs:
         build_type: [Release, Debug]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: python3 script/check_release.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android
         if: ${{ github.event.inputs.skip_release != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
       - run: |
           sudo apt-get update
           sudo apt-get --yes install openjdk-11-jdk
@@ -140,7 +134,7 @@ jobs:
       - run: python3 script/checkout.py --version ${{ env.version }} --system android --machine ${{ matrix.target_machine }}
       - run: python3 script/build.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android --ndk /opt/android-sdk/ndk/25.1.8937393
       - run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }} --system android
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Skia-${{ env.version }}-android-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
           path: '*.zip'
