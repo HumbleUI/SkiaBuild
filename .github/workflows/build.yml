@@ -62,13 +62,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: abdes/gha-setup-ninja@660f330a40aefa8d11632b3f901e92a4adb33d65
       - run: sudo ./script/prepare_linux.sh
-      - run: |
-          sudo apt-get update
-          sudo apt-get --yes install g++-9-aarch64-linux-gnu
-        if: ${{ matrix.target_machine == 'arm64' }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/checkout.py --version ${{ env.version }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
-      - run: PATH=/usr/lib/binutils-2.26/bin:$PATH python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
+      - run: python3 script/checkout.py --version ${{ env.version }}
+      - run: python3 script/build.py --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
+      - run: python3 script/archive.py --version ${{ env.version }} --build-type ${{ matrix.build_type }} --machine ${{ matrix.target_machine }}
       - uses: actions/upload-artifact@v4
         with:
           name: Skia-${{ env.version }}-linux-${{ matrix.build_type }}-${{ matrix.target_machine }}.zip
