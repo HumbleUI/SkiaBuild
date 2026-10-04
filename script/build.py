@@ -55,14 +55,14 @@ def main():
 
     if (machine == 'arm64') and (machine != common.native_machine()):
       args += [
-        'cc="aarch64-linux-gnu-gcc-10"',
-        'cxx="aarch64-linux-gnu-g++-10"',
+        'cc="clang --target=aarch64-linux-gnu"',
+        'cxx="clang++ --target=aarch64-linux-gnu"',
         'extra_cflags=["-I/usr/aarch64-linux-gnu/include"]'
       ]
     else:
       args += [
-        'cc="gcc-10"',
-        'cxx="g++-10"',
+        'cc="clang"',
+        'cxx="clang++"',
       ]
 
   elif 'windows' == system:
@@ -72,6 +72,7 @@ def main():
       'skia_use_direct3d=true',
       'extra_cflags=["-DSK_FONT_HOST_USE_SYSTEM_SETTINGS"]',
       'skia_use_vulkan=true',
+      'clang_win="C:/Program Files/LLVM"',
     ]
   elif 'android' == system:  
     args += [  
