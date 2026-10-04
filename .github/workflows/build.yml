@@ -19,6 +19,9 @@ permissions:
 
 env:
   version: m143-da51f0d60e-5
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: advice.defaultBranchName
+  GIT_CONFIG_VALUE_0: false
 
 jobs:
   macos:
